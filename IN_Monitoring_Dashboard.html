@@ -68,7 +68,7 @@
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--surface2); }
   .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-  .tag-monitoring { background: rgba(108,99,255,0.2); color: #9d97ff; }
+  .tag-monitoring { background: rgba(26,111,255,0.2); color: #7eb3ff; }
   .tag-partner { background: rgba(255,107,107,0.2); color: #ff9494; }
   .tag-enhancement { background: rgba(0,212,170,0.2); color: #33e0c0; }
   .tag-internal { background: rgba(139,144,168,0.2); color: var(--muted); }
@@ -122,9 +122,9 @@
     color: #e8eaf0; font-size: 14px; padding: 10px 14px; outline: none;
     margin-bottom: 12px;
   }
-  #authInput:focus { border-color: #6c63ff; }
+  #authInput:focus { border-color: #1a6fff; }
   #authBtn {
-    width: 100%; background: #6c63ff; color: white; border: none;
+    width: 100%; background: #1a6fff; color: white; border: none;
     border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600;
     cursor: pointer;
   }
@@ -308,7 +308,7 @@ const ALL_MONTHS = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06',
                     '2026-01','2026-02','2026-03','2026-04','2026-05'];
 
 const CAT_CONFIG = {
-  monitoring_detected: { label: 'Monitoring Detected',        color: '#6c63ff' },
+  monitoring_detected: { label: 'Monitoring Detected',        color: '#1a6fff' },
   enhancements:        { label: 'Enhancements (Partner)',      color: '#00d4aa' },
   partner_reported_miss:{ label: 'Partner-Reported Miss',     color: '#ff6b6b' },
   partner_induced:     { label: 'Partner-Induced',             color: '#ffa940' },
@@ -330,7 +330,7 @@ function displayCat(cat) {
 }
 
 const MONITORING_LABELS = {
-  'ps-defect-monitored-partner':    { label: 'Partner Config/Data',  color: '#6c63ff' },
+  'ps-defect-monitored-partner':    { label: 'Partner Config/Data',  color: '#1a6fff' },
   'ps-defect-monitored-dev':        { label: 'Dev/Engineering',       color: '#ff6b6b' },
   'ps-defect-monitored-product':    { label: 'Product Change',        color: '#ffa940' },
   'ps-defect-monitored-tray':       { label: 'Tray Platform',         color: '#40a9ff' },
@@ -478,7 +478,7 @@ function updateDashboard() {
 
   // ── KPIs ──
   document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi" style="--kpi-color:#6c63ff">
+    <div class="kpi" style="--kpi-color:#1a6fff">
       <div class="kpi-icon">🔍</div>
       <div class="kpi-label">Monitoring Detected</div>
       <div class="kpi-value">${fmt(monDetected)}</div>
@@ -557,7 +557,7 @@ function updateDashboard() {
   // ── Donut ──
   destroyChart('donutChart');
   const donutData = [
-    { label: 'Monitoring Detected', value: monDetected, color: '#6c63ff' },
+    { label: 'Monitoring Detected', value: monDetected, color: '#1a6fff' },
     { label: 'Enhancements', value: enhancements, color: '#00d4aa' },
     { label: 'Partner-Induced', value: partnerInduced, color: '#ffa940' },
     { label: 'Partner-Reported Miss', value: partnerMiss, color: '#ff6b6b' },
@@ -593,7 +593,7 @@ function updateDashboard() {
       datasets: [{
         label: 'Story Points',
         data: months.map(m => spByMonth[m] || 0),
-        backgroundColor: months.map(m => { const sp = spByMonth[m] || 0; const a = 0.4 + 0.6*(sp/maxSP); return `rgba(108,99,255,${a.toFixed(2)})`; }),
+        backgroundColor: months.map(m => { const sp = spByMonth[m] || 0; const a = 0.4 + 0.6*(sp/maxSP); return `rgba(26,111,255,${a.toFixed(2)})`; }),
         borderRadius: 4, borderWidth: 0,
       }]
     },
@@ -627,7 +627,7 @@ function updateDashboard() {
     type: 'bar',
     data: {
       labels: assigneeSorted.map(([k]) => k.split(' ')[0]),
-      datasets: [{ data: assigneeSorted.map(([,v]) => v), backgroundColor: ['#6c63ff','#00d4aa','#ffa940','#ff6b6b','#40a9ff','#b37feb'], borderRadius: 4, borderWidth: 0 }]
+      datasets: [{ data: assigneeSorted.map(([,v]) => v), backgroundColor: ['#1a6fff','#00d4aa','#ffa940','#ff6b6b','#40a9ff','#b37feb'], borderRadius: 4, borderWidth: 0 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false, indexAxis: 'y',
@@ -646,7 +646,7 @@ function updateDashboard() {
     type: 'doughnut',
     data: {
       labels: typeEntries.map(([k]) => k),
-      datasets: [{ data: typeEntries.map(([,v]) => v), backgroundColor: ['#00d4aa','#ff6b6b','#ffa940','#6c63ff','#40a9ff'], borderWidth: 0, hoverOffset: 4 }]
+      datasets: [{ data: typeEntries.map(([,v]) => v), backgroundColor: ['#00d4aa','#ff6b6b','#ffa940','#1a6fff','#40a9ff'], borderWidth: 0, hoverOffset: 4 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '60%',
