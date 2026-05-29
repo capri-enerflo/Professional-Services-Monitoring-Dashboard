@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Professional Services — Monitoring Value Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
     --bg: #080d14;
@@ -190,6 +191,14 @@ if (sessionStorage.getItem('auth') === '1') {
     </select>
   </div>
   <div class="divider"></div>
+  <div class="filter-group" id="exportGroup" style="display:none;margin-left:auto">
+    <button id="exportPdfBtn" onclick="exportPartnerPDF()" style="
+      background: var(--accent); color: white; border: none; border-radius: 6px;
+      padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;">
+      ⬇ Export Partner PDF
+    </button>
+  </div>
   <div class="filter-group">
     <label>View</label>
     <select id="viewFilter" onchange="updateDashboard()">
@@ -370,6 +379,14 @@ function getFilteredIssues() {
   const partner = document.getElementById('partnerFilter').value;
   const view = document.getElementById('viewFilter').value;
 
+  // Show export PDF button when partner is selected and not internal view
+  const exportGroup = document.getElementById('exportGroup');
+  if (partner && view !== 'internal') {
+    exportGroup.style.display = '';
+  } else {
+    exportGroup.style.display = 'none';
+  }
+
   // Hide assignee chart on non-internal views
   const assigneeCard = document.getElementById('assigneeCard');
   const bottomRow = document.getElementById('bottomRow');
@@ -432,6 +449,14 @@ function updateDashboard() {
   const agg = aggregate(issues);
   const partner = document.getElementById('partnerFilter').value;
   const view = document.getElementById('viewFilter').value;
+
+  // Show export PDF button when partner is selected and not internal view
+  const exportGroup = document.getElementById('exportGroup');
+  if (partner && view !== 'internal') {
+    exportGroup.style.display = '';
+  } else {
+    exportGroup.style.display = 'none';
+  }
 
   // Hide assignee chart on non-internal views
   const assigneeCard = document.getElementById('assigneeCard');
@@ -696,6 +721,192 @@ function updateDashboard() {
   const noteEl = document.getElementById('missingLabelNote');
   if (unlabeled > 0) { noteEl.style.display = 'block'; document.getElementById('unlabeledCount').textContent = unlabeled; }
   else { noteEl.style.display = 'none'; }
+}
+
+// ─── EXPORT PARTNER PDF ──────────────────────────────────────────────────────
+function exportPartnerPDF() {
+  const { jsPDF } = window.jspdf;
+  const partner = document.getElementById('partnerFilter').value;
+  const period = document.getElementById('periodFilter').value;
+  const issues = getFilteredIssues();
+  const agg = aggregate(issues);
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+  const W = 612, H = 792;
+  const margin = 48;
+  const col = W - margin * 2;
+
+  // ── Header band ──
+  doc.setFillColor(8, 13, 20);
+  doc.rect(0, 0, W, 90, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(232, 238, 248);
+  doc.text(partner, margin, 38);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(107, 138, 173);
+  doc.text('Professional Services  ·  Integration Monitoring Report', margin, 56);
+  const periodLabel = period === 'all' ? 'January 2025 – May 2026' :
+    {'2025-Q1':'Q1 2025','2025-Q2':'Q2 2025','2025-Q3':'Q3 2025','2025-Q4':'Q4 2025',
+     '2026-Q1':'Q1 2026','2026-Q2':'Q2 2026'}[period] || period;
+  doc.text(periodLabel, margin, 72);
+
+  let y = 112;
+
+  // ── Intro ──
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(45, 49, 72);
+  const intro = `This report summarizes the integration monitoring and support work completed by the Enerflo Professional Services team on behalf of ${partner}. It covers issues proactively detected by monitoring, partner-requested enhancements, and the estimated engineering value delivered.`;
+  const introLines = doc.splitTextToSize(intro, col);
+  doc.text(introLines, margin, y);
+  y += introLines.length * 14 + 16;
+
+  // ── KPI boxes ──
+  const mon = agg.catCounts.monitoring_detected || 0;
+  const enh = agg.catCounts.enhancements || 0;
+  const miss = agg.catCounts.partner_reported_miss || 0;
+  const induced = agg.catCounts.partner_induced || 0;
+  const proactive = (mon + miss) > 0 ? Math.round(mon / (mon + miss) * 100) : 0;
+
+  const kpis = [
+    { val: agg.total, label: 'Issues Resolved' },
+    { val: agg.totalSP, label: 'Story Points' },
+    { val: Math.round(agg.totalHours) + 'h', label: 'Dev Hours' },
+    { val: fmtDollar(agg.totalValue), label: 'Est. Value' },
+    { val: proactive + '%', label: 'Proactive Rate' },
+  ];
+  const kw = col / kpis.length;
+  doc.setFillColor(244, 246, 251);
+  doc.roundedRect(margin, y, col, 64, 4, 4, 'F');
+  kpis.forEach((k, i) => {
+    const kx = margin + i * kw + kw / 2;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(26, 111, 255);
+    doc.text(String(k.val), kx, y + 28, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 138, 173);
+    doc.text(k.label, kx, y + 44, { align: 'center' });
+    if (i < kpis.length - 1) {
+      doc.setDrawColor(221, 225, 239);
+      doc.line(margin + (i + 1) * kw, y + 10, margin + (i + 1) * kw, y + 54);
+    }
+  });
+  y += 80;
+
+  // ── Proactive callout ──
+  doc.setFillColor(240, 249, 255);
+  doc.setDrawColor(0, 180, 216);
+  doc.roundedRect(margin, y, col, 60, 4, 4, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(28);
+  doc.setTextColor(0, 180, 216);
+  doc.text(proactive + '%', margin + 56, y + 36, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(45, 49, 72);
+  doc.text(`of defects caught by monitoring before ${partner} noticed`, margin + 110, y + 22);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(107, 138, 173);
+  doc.text(`${mon} proactively detected  ·  ${miss} reported by partner first`, margin + 110, y + 40);
+  y += 76;
+
+  // ── Category table ──
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(45, 49, 72);
+  doc.text('Issue Breakdown', margin, y);
+  y += 16;
+
+  const catRows = [
+    ['Category', 'Issues', 'Dev Hours', 'Est. Value'],
+    ['Monitoring Detected', mon, Math.round(agg.catHours.monitoring_detected||0)+'h', fmtDollar((agg.catHours.monitoring_detected||0)*RATE)],
+    ['Enhancements', enh, Math.round(agg.catHours.enhancements||0)+'h', fmtDollar((agg.catHours.enhancements||0)*RATE)],
+    ['Partner-Induced', induced, Math.round(agg.catHours.partner_induced||0)+'h', fmtDollar((agg.catHours.partner_induced||0)*RATE)],
+    ['Partner-Reported Miss', miss, Math.round(agg.catHours.partner_reported_miss||0)+'h', '—'],
+    ['TOTAL', agg.total, Math.round(agg.totalHours)+'h', fmtDollar(agg.totalValue)],
+  ];
+  const colW = [col*0.42, col*0.15, col*0.18, col*0.25];
+  const colX = [margin, margin+colW[0], margin+colW[0]+colW[1], margin+colW[0]+colW[1]+colW[2]];
+
+  catRows.forEach((row, ri) => {
+    const isHeader = ri === 0;
+    const isTotal = ri === catRows.length - 1;
+    const rowH = 24;
+    if (isHeader || isTotal) {
+      doc.setFillColor(isHeader ? 220 : 232, isHeader ? 225 : 238, isHeader ? 239 : 248);
+      doc.rect(margin, y, col, rowH, 'F');
+    } else if (ri % 2 === 0) {
+      doc.setFillColor(244, 246, 251);
+      doc.rect(margin, y, col, rowH, 'F');
+    }
+    row.forEach((cell, ci) => {
+      doc.setFont('helvetica', isHeader || isTotal ? 'bold' : 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(isHeader ? 107 : 45, isHeader ? 138 : 49, isHeader ? 173 : 72);
+      if (ci === 3 && !isHeader) doc.setTextColor(26, 111, 255);
+      doc.text(String(cell), colX[ci] + 6, y + 16);
+    });
+    y += rowH;
+  });
+  y += 20;
+
+  // ── Monitoring sub-breakdown ──
+  if (Object.keys(agg.monSubs).length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(45, 49, 72);
+    doc.text('Monitoring Root Causes', margin, y);
+    y += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(107, 138, 173);
+    doc.text('How the ' + mon + ' proactively detected defects broke down:', margin, y);
+    y += 14;
+
+    const subTotal = Object.values(agg.monSubs).reduce((a,b)=>a+b,0);
+    const subColors = { 'ps-defect-monitored-partner':[26,111,255], 'ps-defect-monitored-dev':[255,107,107],
+      'ps-defect-monitored-product':[255,169,64], 'ps-defect-monitored-tray':[56,189,248],
+      'ps-defect-monitored-zapier':[0,180,216], 'ps-defect-monitored-onboarding':[167,139,250],
+      'ps-defect-monitoring-errors':[247,89,171] };
+    const subLabels = { 'ps-defect-monitored-partner':'Partner Config/Data','ps-defect-monitored-dev':'Dev/Engineering',
+      'ps-defect-monitored-product':'Product Change','ps-defect-monitored-tray':'Tray Platform',
+      'ps-defect-monitored-zapier':'Zapier','ps-defect-monitored-onboarding':'Onboarding',
+      'ps-defect-monitoring-errors':'Monitoring Errors' };
+
+    Object.entries(agg.monSubs).filter(([,v])=>v>0).forEach(([key, count]) => {
+      const pct = subTotal > 0 ? count/subTotal : 0;
+      const col3 = subColors[key] || [26,111,255];
+      const barW = (col - 140) * pct;
+      doc.setFillColor(...col3);
+      doc.roundedRect(margin + 140, y - 10, Math.max(barW, 2), 10, 2, 2, 'F');
+      doc.setFillColor(221, 225, 239);
+      if (barW < col - 140) doc.roundedRect(margin + 140 + barW, y - 10, col - 140 - barW, 10, 2, 2, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(45, 49, 72);
+      doc.text(subLabels[key] || key, margin, y - 1);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...col3);
+      doc.text(String(count), W - margin, y - 1, { align: 'right' });
+      y += 18;
+    });
+    y += 8;
+  }
+
+  // ── Footer ──
+  doc.setDrawColor(221, 225, 239);
+  doc.line(margin, H - 36, W - margin, H - 36);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(107, 138, 173);
+  doc.text(`Enerflo Professional Services  ·  ${partner} Integration Monitoring Report  ·  ${periodLabel}  ·  Confidential`, W/2, H - 22, { align: 'center' });
+
+  doc.save(`${partner}_PS_Monitoring_Report.pdf`);
 }
 
 Chart.defaults.color = '#8b90a8';
