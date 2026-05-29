@@ -105,6 +105,62 @@
 </head>
 <body>
 
+<style>
+  #authOverlay {
+    position: fixed; inset: 0; background: #0f1117;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  #authBox {
+    background: #1a1d27; border: 1px solid #2e3246; border-radius: 16px;
+    padding: 40px 48px; text-align: center; width: 360px;
+  }
+  #authBox h2 { color: #e8eaf0; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  #authBox p { color: #8b90a8; font-size: 13px; margin-bottom: 24px; }
+  #authInput {
+    width: 100%; background: #222536; border: 1px solid #2e3246; border-radius: 8px;
+    color: #e8eaf0; font-size: 14px; padding: 10px 14px; outline: none;
+    margin-bottom: 12px;
+  }
+  #authInput:focus { border-color: #6c63ff; }
+  #authBtn {
+    width: 100%; background: #6c63ff; color: white; border: none;
+    border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  #authBtn:hover { background: #5a52e0; }
+  #authError { color: #ff6b6b; font-size: 12px; margin-top: 8px; display: none; }
+</style>
+<div id="authOverlay">
+  <div id="authBox">
+    <h2>Integration Services Dashboard</h2>
+    <p>Enter password to continue</p>
+    <input id="authInput" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')checkAuth()" autofocus />
+    <button id="authBtn" onclick="checkAuth()">Continue</button>
+    <div id="authError">Incorrect password. Please try again.</div>
+  </div>
+</div>
+<script>
+async function checkAuth() {
+  const val = document.getElementById('authInput').value;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  if (hash === '4c4efd76e7b50fe379a1b4224b36f5fe8cde6003d6b289724f81c67346ab8d6d') {
+    document.getElementById('authOverlay').style.display = 'none';
+    sessionStorage.setItem('auth','1');
+  } else {
+    document.getElementById('authError').style.display = 'block';
+    document.getElementById('authInput').value = '';
+    document.getElementById('authInput').focus();
+  }
+}
+if (sessionStorage.getItem('auth') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('authOverlay').style.display = 'none';
+  });
+}
+</script>
+
 <div class="header">
   <div class="header-left">
     <h1>Integration Services — Monitoring Value Dashboard <span class="badge">IN Project</span><span class="partner-badge" id="partnerBadge"></span></h1>
