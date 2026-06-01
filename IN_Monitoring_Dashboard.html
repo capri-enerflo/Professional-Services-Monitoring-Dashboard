@@ -263,6 +263,15 @@ if (sessionStorage.getItem('auth') === '1') {
     </div>
   </div>
 
+  <!-- Partner Breakdown Table (Internal only) -->
+  <div class="chart-card" id="partnerTableCard">
+    <div class="chart-title">Partner Breakdown</div>
+    <div class="chart-subtitle">Time and value delivered per partner — sorted by story points</div>
+    <div class="table-wrap" style="margin-top:12px">
+      <table id="partnerTable"></table>
+    </div>
+  </div>
+
   <!-- Assignee + Type + Proactive -->
   <div class="chart-grid-3" id="bottomRow">
     <div class="chart-card" id="assigneeCard">
@@ -721,6 +730,53 @@ function updateDashboard() {
   const noteEl = document.getElementById('missingLabelNote');
   if (unlabeled > 0) { noteEl.style.display = 'block'; document.getElementById('unlabeledCount').textContent = unlabeled; }
   else { noteEl.style.display = 'none'; }
+
+  // ── Partner breakdown table (internal view only) ──
+  const partnerTableCard = document.getElementById('partnerTableCard');
+  if (view === 'internal' && !partner) {
+    partnerTableCard.style.display = '';
+    // Aggregate per partner from filtered issues
+    const pMap = {};
+    for (const i of issues) {
+      for (const p of i.partners) {
+        if (!pMap[p]) pMap[p] = { sp: 0, hours: 0, count: 0, mon: 0, enh: 0 };
+        pMap[p].sp += i.sp;
+        pMap[p].hours += i.hours;
+        pMap[p].count += 1;
+        if (i.cats.includes('monitoring_detected')) pMap[p].mon += 1;
+        if (i.cats.includes('enhancements')) pMap[p].enh += 1;
+      }
+    }
+    const pRows = Object.entries(pMap)
+      .sort((a, b) => b[1].sp - a[1].sp)
+      .slice(0, 30);
+    const totalPartnerSP = pRows.reduce((s, [,v]) => s + v.sp, 0);
+    document.getElementById('partnerTable').innerHTML = `
+      <thead><tr>
+        <th>Partner</th>
+        <th>Issues</th>
+        <th>Story Points</th>
+        <th>Dev Hours</th>
+        <th>Est. Value</th>
+        <th>Monitoring</th>
+        <th>Enhancements</th>
+        <th>% of SP</th>
+      </tr></thead>
+      <tbody>
+        ${pRows.map(([name, v]) => `<tr>
+          <td style="font-weight:600">${name}</td>
+          <td>${fmt(v.count)}</td>
+          <td>${fmt(v.sp)}</td>
+          <td>${fmt(Math.round(v.hours))}h</td>
+          <td style="color:var(--accent2);font-weight:600">${fmtDollar(v.hours * RATE)}</td>
+          <td style="color:var(--accent)">${v.mon}</td>
+          <td style="color:var(--accent2)">${v.enh}</td>
+          <td style="color:var(--muted)">${totalPartnerSP > 0 ? Math.round(v.sp / totalPartnerSP * 100) : 0}%</td>
+        </tr>`).join('')}
+      </tbody>`;
+  } else {
+    partnerTableCard.style.display = 'none';
+  }
 }
 
 // ─── EXPORT PARTNER PDF ──────────────────────────────────────────────────────
