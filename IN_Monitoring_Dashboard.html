@@ -327,7 +327,7 @@ const ALL_MONTHS = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06',
 
 const CAT_CONFIG = {
   monitoring_detected: { label: 'Monitoring Detected',        color: '#1a6fff' },
-  enhancements:        { label: 'Enhancements (Partner)',      color: '#00d4aa' },
+  enhancements:        { label: 'Integration Updates',      color: '#00d4aa' },
   partner_reported_miss:{ label: 'Partner-Reported Miss',     color: '#ff6b6b' },
   partner_induced:     { label: 'Partner-Induced',             color: '#ffa940' },
   internal:            { label: 'Internal',                    color: '#8b90a8' },
@@ -511,18 +511,50 @@ function updateDashboard() {
   const proactiveRate = (monDetected + partnerMiss) > 0 ? Math.round(monDetected / (monDetected + partnerMiss) * 100) : 0;
 
   // ── KPIs ──
-  document.getElementById('kpiRow').innerHTML = `
+  const isPartnerView = view === 'partner';
+  document.getElementById('kpiRow').innerHTML = isPartnerView ? `
+    <div class="kpi" style="--kpi-color:#1a6fff">
+      <div class="kpi-icon">🔍</div>
+      <div class="kpi-label">Issues We Caught For You</div>
+      <div class="kpi-value">${fmt(monDetected)}</div>
+      <div class="kpi-sub">Resolved before you noticed</div>
+    </div>
+    <div class="kpi" style="--kpi-color:#00b4d8">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-label">Integration Updates</div>
+      <div class="kpi-value">${fmt(enhancements)}</div>
+      <div class="kpi-sub">New updates delivered to your integration</div>
+    </div>
+    <div class="kpi" style="--kpi-color:#ff6b6b">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-label">Reported by You First</div>
+      <div class="kpi-value">${fmt(partnerMiss)}</div>
+      <div class="kpi-sub">We missed these — you caught them</div>
+    </div>
+    <div class="kpi" style="--kpi-color:#00b4d8">
+      <div class="kpi-icon">⏱</div>
+      <div class="kpi-label">Dev Hours Delivered</div>
+      <div class="kpi-value">${fmt(Math.round(agg.totalHours))}</div>
+      <div class="kpi-sub">Engineering time on your integrations</div>
+    </div>
+    <div class="kpi" style="--kpi-color:#00b4d8">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label">Est. Value Delivered</div>
+      <div class="kpi-value">${fmtDollar(agg.totalValue)}</div>
+      <div class="kpi-sub">${fmt(agg.total)} total issues resolved</div>
+    </div>
+  ` : `
     <div class="kpi" style="--kpi-color:#1a6fff">
       <div class="kpi-icon">🔍</div>
       <div class="kpi-label">Monitoring Detected</div>
       <div class="kpi-value">${fmt(monDetected)}</div>
       <div class="kpi-sub">Issues caught before partners</div>
     </div>
-    <div class="kpi" style="--kpi-color:#00d4aa">
+    <div class="kpi" style="--kpi-color:#00b4d8">
       <div class="kpi-icon">✅</div>
-      <div class="kpi-label">Enhancements Completed</div>
+      <div class="kpi-label">Integration Updates</div>
       <div class="kpi-value">${fmt(enhancements)}</div>
-      <div class="kpi-sub">Partner-requested updates</div>
+      <div class="kpi-sub">New updates delivered to your integration</div>
     </div>
     <div class="kpi" style="--kpi-color:#ff6b6b">
       <div class="kpi-icon">⚠️</div>
@@ -536,7 +568,7 @@ function updateDashboard() {
       <div class="kpi-value">${fmt(partnerInduced)}</div>
       <div class="kpi-sub">Partner caused, PS resolved</div>
     </div>
-    <div class="kpi" style="--kpi-color:#40a9ff">
+    <div class="kpi" style="--kpi-color:#38bdf8">
       <div class="kpi-icon">⚡</div>
       <div class="kpi-label">Story Points Delivered</div>
       <div class="kpi-value">${fmt(agg.totalSP)}</div>
@@ -544,7 +576,7 @@ function updateDashboard() {
     </div>
   `;
 
-  // ── Cost card ──
+    // ── Cost card ──
   document.getElementById('costCard').innerHTML = `
     <div>
       <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px">Estimated Engineering Value Delivered</div>
@@ -566,7 +598,9 @@ function updateDashboard() {
 
   // ── Monthly stacked bar ──
   destroyChart('monthlyChart');
-  const catKeys = ['monitoring_detected','enhancements','partner_induced','partner_reported_miss','internal','installer_program','contracts','domo_reporting','unlabeled'];
+  const catKeys = isPartnerView
+    ? ['monitoring_detected','enhancements','partner_induced','partner_reported_miss']
+    : ['monitoring_detected','enhancements','partner_induced','partner_reported_miss','internal','installer_program','contracts','domo_reporting','unlabeled'];
   const datasets = catKeys.filter(cat => {
     return months.some(m => (agg.byMonth[m] || {})[cat] > 0);
   }).map(cat => ({
@@ -691,7 +725,7 @@ function updateDashboard() {
   // ── Category table ──
   const tableCats = [
     { key: 'monitoring_detected', label: 'Monitoring Detected',         tag: 'tag-monitoring', desc: 'Issues caught by monitoring before partner noticed' },
-    { key: 'enhancements',        label: 'Enhancements (Partner)',       tag: 'tag-enhancement', desc: 'Partner-requested updates completed by PS' },
+    { key: 'enhancements',        label: 'Integration Updates',       tag: 'tag-enhancement', desc: 'New updates delivered to your integration completed by PS' },
     { key: 'partner_induced',     label: 'Partner-Induced Defects',      tag: 'tag-partner', desc: 'Partner caused the issue; PS resolved it' },
     { key: 'partner_reported_miss',label:'Partner-Reported Miss',        tag: 'tag-partner', desc: 'Partner caught before monitoring did — Enerflo/product cause' },
     { key: 'internal',            label: 'Internal Work',                tag: 'tag-internal', desc: 'Tech debt, process improvements, internal tooling' },
@@ -716,7 +750,55 @@ function updateDashboard() {
     </tr>`;
   }).join('');
 
-  document.getElementById('labelTable').innerHTML = `
+  if (isPartnerView) {
+    document.getElementById('labelTable').innerHTML = `
+      <thead><tr>
+        <th>Category</th>
+        <th>Issues</th>
+        <th>Dev Hours</th>
+        <th>Est. Value</th>
+        <th>What This Means</th>
+      </tr></thead>
+      <tbody>
+        ${monDetected ? `<tr>
+          <td><span class="tag tag-monitoring">Proactively Detected</span></td>
+          <td style="font-weight:600">${fmt(monDetected)}</td>
+          <td>${fmt(Math.round(agg.catHours.monitoring_detected||0))}h</td>
+          <td style="color:var(--accent2);font-weight:600">${fmtDollar((agg.catHours.monitoring_detected||0)*RATE)}</td>
+          <td style="color:var(--muted)">Issues our monitoring caught and resolved before you noticed</td>
+        </tr>` : ''}
+        ${enhancements ? `<tr>
+          <td><span class="tag tag-enhancement">Enhancements</span></td>
+          <td style="font-weight:600">${fmt(enhancements)}</td>
+          <td>${fmt(Math.round(agg.catHours.enhancements||0))}h</td>
+          <td style="color:var(--accent2);font-weight:600">${fmtDollar((agg.catHours.enhancements||0)*RATE)}</td>
+          <td style="color:var(--muted)">Requested updates and improvements completed by PS</td>
+        </tr>` : ''}
+        ${partnerInduced ? `<tr>
+          <td><span class="tag tag-partner">Partner-Induced</span></td>
+          <td style="font-weight:600">${fmt(partnerInduced)}</td>
+          <td>${fmt(Math.round(agg.catHours.partner_induced||0))}h</td>
+          <td style="color:var(--accent2);font-weight:600">${fmtDollar((agg.catHours.partner_induced||0)*RATE)}</td>
+          <td style="color:var(--muted)">Issues originating from partner config or data — resolved by PS</td>
+        </tr>` : ''}
+        ${partnerMiss ? `<tr>
+          <td><span class="tag tag-partner">Reported by You First</span></td>
+          <td style="font-weight:600">${fmt(partnerMiss)}</td>
+          <td>${fmt(Math.round(agg.catHours.partner_reported_miss||0))}h</td>
+          <td style="color:var(--accent2);font-weight:600">${fmtDollar((agg.catHours.partner_reported_miss||0)*RATE)}</td>
+          <td style="color:var(--muted)">You caught these before monitoring did — we're working to close this gap</td>
+        </tr>` : ''}
+        <tr style="font-weight:700;border-top:2px solid var(--border)">
+          <td>TOTAL</td>
+          <td>${fmt(agg.total)}</td>
+          <td>${fmt(Math.round(agg.totalHours))}h</td>
+          <td style="color:var(--accent2)">${fmtDollar(agg.totalValue)}</td>
+          <td></td>
+        </tr>
+      </tbody>`;
+    document.getElementById('missingLabelNote').style.display = 'none';
+  } else {
+  document.getElementById('labelTable').innerHTML = \`
     <thead><tr><th>Category</th><th>Issues</th><th>Story Points</th><th>Est. Value</th><th>% of Total</th><th>Description</th></tr></thead>
     <tbody>
       ${tableRows}
@@ -730,6 +812,7 @@ function updateDashboard() {
   const noteEl = document.getElementById('missingLabelNote');
   if (unlabeled > 0) { noteEl.style.display = 'block'; document.getElementById('unlabeledCount').textContent = unlabeled; }
   else { noteEl.style.display = 'none'; }
+  } // close non-partner table else
 
   // ── Partner breakdown table (internal view only) ──
   const partnerTableCard = document.getElementById('partnerTableCard');
