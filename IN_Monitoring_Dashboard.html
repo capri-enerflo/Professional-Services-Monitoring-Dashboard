@@ -179,15 +179,13 @@ if (sessionStorage.getItem('auth') === '1') {
     <div id="periodPills" style="display:flex;flex-direction:column;gap:4px">
       <div style="display:flex;gap:4px;align-items:center">
         <button class="pill active" data-period="all" onclick="togglePeriod(this)">All Time</button>
-      </div>
-      <div style="display:flex;gap:4px;align-items:center">
-        <span style="font-size:10px;color:#4a6a8a;font-weight:700;min-width:30px">2025</span>
+        <span style="font-size:10px;color:#4a6a8a;font-weight:700;margin-left:4px;min-width:30px">2025</span>
         <button class="pill" data-period="2025-Q1" onclick="togglePeriod(this)">Q1</button>
         <button class="pill" data-period="2025-Q2" onclick="togglePeriod(this)">Q2</button>
         <button class="pill" data-period="2025-Q3" onclick="togglePeriod(this)">Q3</button>
         <button class="pill" data-period="2025-Q4" onclick="togglePeriod(this)">Q4</button>
       </div>
-      <div style="display:flex;gap:4px;align-items:center">
+      <div style="display:flex;gap:4px;align-items:center;padding-left:72px">
         <span style="font-size:10px;color:#4a6a8a;font-weight:700;min-width:30px">2026</span>
         <button class="pill" data-period="2026-Q1" onclick="togglePeriod(this)">Q1</button>
         <button class="pill" data-period="2026-Q2" onclick="togglePeriod(this)">Q2</button>
