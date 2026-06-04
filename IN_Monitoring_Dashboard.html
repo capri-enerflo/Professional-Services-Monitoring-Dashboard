@@ -213,9 +213,8 @@ if (sessionStorage.getItem('auth') === '1') {
   <div class="filter-group">
     <label>View</label>
     <select id="viewFilter" onchange="updateDashboard()">
-      <option value="internal">Internal (All Categories)</option>
-      <option value="monitoring">Monitoring Focus</option>
-      <option value="partner">Partner Value</option>
+      <option value="internal">Internal</option>
+      <option value="external">External</option>
     </select>
   </div>
 </div>
@@ -514,7 +513,7 @@ function updateDashboard() {
   const proactiveRate = (monDetected + partnerMiss) > 0 ? Math.round(monDetected / (monDetected + partnerMiss) * 100) : 0;
 
   // ── KPIs ──
-  const isPartnerView = view === 'partner';
+  const isPartnerView = view === 'external';
   document.getElementById('kpiRow').innerHTML = isPartnerView ? `
     <div class="kpi" style="--kpi-color:#1a6fff">
       <div class="kpi-icon">🔍</div>
@@ -527,6 +526,12 @@ function updateDashboard() {
       <div class="kpi-label">Integration Updates</div>
       <div class="kpi-value">${fmt(enhancements)}</div>
       <div class="kpi-sub">New updates delivered to your integration</div>
+    </div>
+    <div class="kpi" style="--kpi-color:#ffa940">
+      <div class="kpi-icon">🔧</div>
+      <div class="kpi-label">Partner-Induced</div>
+      <div class="kpi-value">${fmt(partnerInduced)}</div>
+      <div class="kpi-sub">Partner caused, PS resolved</div>
     </div>
     <div class="kpi" style="--kpi-color:#ff6b6b">
       <div class="kpi-icon">⚠️</div>
@@ -573,9 +578,9 @@ function updateDashboard() {
     </div>
     <div class="kpi" style="--kpi-color:#38bdf8">
       <div class="kpi-icon">⚡</div>
-      <div class="kpi-label">Story Points Delivered</div>
-      <div class="kpi-value">${fmt(agg.totalSP)}</div>
-      <div class="kpi-sub">${fmt(agg.total)} total issues resolved</div>
+      <div class="kpi-label">Total Issues Resolved</div>
+      <div class="kpi-value">${fmt(agg.total)}</div>
+      <div class="kpi-sub">${fmt(agg.totalSP)} story points delivered</div>
     </div>
   `;
 
