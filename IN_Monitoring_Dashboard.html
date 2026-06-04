@@ -889,7 +889,8 @@ function updateDashboard() {
 function exportPartnerPDF() {
   const { jsPDF } = window.jspdf;
   const partner = document.getElementById('partnerFilter').value;
-  const period = document.getElementById('periodFilter').value;
+  const activePills = [...document.querySelectorAll('.pill.active')].map(p=>p.dataset.period);
+  const period = activePills.includes('all') || activePills.length===0 ? 'all' : activePills.join(', ');
   const issues = getFilteredIssues();
   const agg = aggregate(issues);
 
