@@ -102,6 +102,9 @@
     .main { padding: 16px; }
     .header, .controls { padding: 16px; }
   }
+  .pill { background: #111c2e; color: #4a6a8a; border: 1px solid #1e3050; border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .pill:hover { border-color: #1a6fff; color: #c8d8ea; }
+  .pill.active { background: #1a6fff; color: white; border-color: #1a6fff; }
 </style>
 </head>
 <body>
@@ -171,17 +174,17 @@ if (sessionStorage.getItem('auth') === '1') {
 </div>
 
 <div class="controls">
-  <div class="filter-group">
-    <label>Period</label>
-    <select id="periodFilter" onchange="updateDashboard()">
-      <option value="all">All Time (Jan 2025 – May 2026)</option>
-      <option value="2025-Q1">2025 Q1 (Jan–Mar)</option>
-      <option value="2025-Q2">2025 Q2 (Apr–Jun)</option>
-      <option value="2025-Q3">2025 Q3 (Jul–Sep)</option>
-      <option value="2025-Q4">2025 Q4 (Oct–Dec)</option>
-      <option value="2026-Q1">2026 Q1 (Jan–Mar)</option>
-      <option value="2026-Q2">2026 Q2 (Apr–May)</option>
-    </select>
+  <div class="filter-group" id="periodGroup">
+    <label>PERIOD</label>
+    <div id="periodPills" style="display:flex;flex-wrap:wrap;gap:4px;max-width:420px">
+      <button class="pill active" data-period="all" onclick="togglePeriod(this)">All Time</button>
+      <button class="pill" data-period="2025-Q1" onclick="togglePeriod(this)">2025 Q1</button>
+      <button class="pill" data-period="2025-Q2" onclick="togglePeriod(this)">2025 Q2</button>
+      <button class="pill" data-period="2025-Q3" onclick="togglePeriod(this)">2025 Q3</button>
+      <button class="pill" data-period="2025-Q4" onclick="togglePeriod(this)">2025 Q4</button>
+      <button class="pill" data-period="2026-Q1" onclick="togglePeriod(this)">2026 Q1</button>
+      <button class="pill" data-period="2026-Q2" onclick="togglePeriod(this)">2026 Q2</button>
+    </div>
   </div>
   <div class="divider"></div>
   <div class="filter-group">
@@ -219,8 +222,16 @@ if (sessionStorage.getItem('auth') === '1') {
   <!-- KPI Row -->
   <div class="kpi-row" id="kpiRow"></div>
 
-  <!-- Cost Avoided -->
-  <div class="cost-card" id="costCard"></div>
+  <!-- Cost Avoided + Proactive Rate -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+    <div class="cost-card" id="costCard"></div>
+    <div class="chart-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:16px">
+      <div style="font-size:11px;font-weight:700;color:#4a6a8a;text-transform:uppercase;letter-spacing:0.5px">Proactive Rate</div>
+      <div id="proactiveRate" style="font-size:52px;font-weight:800;color:#1a6fff;line-height:1">—</div>
+      <div style="font-size:11px;color:#4a6a8a;text-align:center" id="proactiveLabel">caught before partner noticed</div>
+      <div style="font-size:11px;color:#4a6a8a" id="proactiveSub"></div>
+    </div>
+  </div>
 
   <!-- Chart Row 1: Monthly Volume + Detection Breakdown -->
   <div class="chart-grid">
@@ -258,9 +269,7 @@ if (sessionStorage.getItem('auth') === '1') {
     <div class="table-wrap" style="margin-top:12px">
       <table id="labelTable"></table>
     </div>
-    <div class="note" id="missingLabelNote" style="display:none">
-      ⚠ <strong>Missing label:</strong> <span id="unlabeledCount">0</span> issues have no <code>ps-*</code> label and appear in "Unlabeled". Adding labels in Jira will improve accuracy.
-    </div>
+    <div class="note" id="missingLabelNote" style="display:none">⚠ <strong><span id="unlabeledCount">0</span> issues</strong> have no ps-* label — <span id="unlabeledKeys" style="font-family:monospace;font-size:10px"></span></div>
   </div>
 
   <!-- Partner Breakdown Table (Internal only) -->
@@ -283,15 +292,6 @@ if (sessionStorage.getItem('auth') === '1') {
       <div class="chart-title">Issue Type Mix</div>
       <div class="chart-subtitle">Story / Defect / Chore split</div>
       <div class="chart-wrap" style="height:200px"><canvas id="typeChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Proactive vs Reactive Rate</div>
-      <div class="chart-subtitle">% of defects caught by monitoring before partner reported</div>
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:8px">
-        <div style="font-size:64px;font-weight:800;color:var(--accent2)" id="proactiveRate">—</div>
-        <div style="font-size:13px;color:var(--muted);text-align:center" id="proactiveLabel">of defects caught before partner noticed</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="proactiveSub"></div>
-      </div>
     </div>
   </div>
 
@@ -378,9 +378,27 @@ function fmtDollar(n) {
 }
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
+function togglePeriod(btn) {
+  const isAll = btn.dataset.period === 'all';
+  const pills = [...document.querySelectorAll('.pill')];
+  if (isAll) {
+    pills.forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    const allBtn = document.querySelector('.pill[data-period="all"]');
+    allBtn.classList.remove('active');
+    btn.classList.toggle('active');
+    if (!pills.some(p => p.classList.contains('active'))) allBtn.classList.add('active');
+  }
+  updateDashboard();
+}
+
 function getActiveMonths() {
-  const p = document.getElementById('periodFilter').value;
-  return PERIOD_MONTHS[p] || ALL_MONTHS;
+  const activePills = [...document.querySelectorAll('.pill.active')].map(p => p.dataset.period);
+  const dataMonths = [...new Set(RAW.issues.map(i=>i.month))].sort();
+  if (activePills.includes('all') || !activePills.length) return dataMonths;
+  const selected = new Set(activePills.flatMap(p => PERIOD_MONTHS[p] || []));
+  return dataMonths.filter(m => selected.has(m));
 }
 
 function getFilteredIssues() {
@@ -810,8 +828,13 @@ function updateDashboard() {
 
   const unlabeled = agg.catCounts.unlabeled || 0;
   const noteEl = document.getElementById('missingLabelNote');
-  if (unlabeled > 0) { noteEl.style.display = 'block'; document.getElementById('unlabeledCount').textContent = unlabeled; }
-  else { noteEl.style.display = 'none'; }
+  const showNote = unlabeled > 0 && view === 'internal';
+  noteEl.style.display = showNote ? 'block' : 'none';
+  if (showNote) {
+    document.getElementById('unlabeledCount').textContent = unlabeled;
+    const unlabeledIssues = issues.filter(i => i.cats && i.cats.includes('unlabeled')).map(i => i.k || i.key);
+    document.getElementById('unlabeledKeys').textContent = unlabeledIssues.join(', ');
+  }
   } // close non-partner table else
 
   // ── Partner breakdown table (internal view only) ──
