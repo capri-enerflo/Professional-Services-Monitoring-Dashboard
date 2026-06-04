@@ -214,10 +214,6 @@ if (sessionStorage.getItem('auth') === '1') {
 
 <div class="main">
 
-  <!-- Partner summary strip (shown only when partner selected) -->
-  <div class="partner-stats-row" id="partnerStatsRow">
-    <!-- populated by JS -->
-  </div>
 
   <!-- KPI Row -->
   <div class="kpi-row" id="kpiRow"></div>
@@ -502,25 +498,6 @@ function updateDashboard() {
   if (partner) { badge.textContent = partner; badge.style.display = 'inline-block'; }
   else { badge.style.display = 'none'; }
 
-  // Partner stats row
-  const prow = document.getElementById('partnerStatsRow');
-  if (partner) {
-    prow.classList.add('visible');
-    const mon = agg.catCounts.monitoring_detected || 0;
-    const miss = agg.catCounts.partner_reported_miss || 0;
-    const enh = agg.catCounts.enhancements || 0;
-    const proactive = (mon + miss) > 0 ? Math.round(mon / (mon + miss) * 100) : 0;
-    prow.innerHTML = `
-      <div class="pstat"><div class="pstat-label">Issues Resolved</div><div class="pstat-value">${fmt(agg.total)}</div></div>
-      <div class="pstat"><div class="pstat-label">Story Points</div><div class="pstat-value">${fmt(agg.totalSP)}</div></div>
-      <div class="pstat"><div class="pstat-label">Engineering Hours</div><div class="pstat-value">${fmt(Math.round(agg.totalHours))}</div></div>
-      <div class="pstat"><div class="pstat-label">Est. Value Delivered</div><div class="pstat-value">${fmtDollar(agg.totalValue)}</div></div>
-      <div class="pstat"><div class="pstat-label">Proactive Defect Rate</div><div class="pstat-value">${proactive}%</div></div>
-      <div class="pstat"><div class="pstat-label">Enhancements</div><div class="pstat-value">${fmt(enh)}</div></div>
-    `;
-  } else {
-    prow.classList.remove('visible');
-  }
 
   const monDetected = agg.catCounts.monitoring_detected || 0;
   const enhancements = agg.catCounts.enhancements || 0;
