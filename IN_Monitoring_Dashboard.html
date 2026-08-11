@@ -184,6 +184,7 @@ if (sessionStorage.getItem('auth') === '1') {
         <span style="font-size:10px;color:#4a6a8a;font-weight:700;min-width:32px;text-align:right">2026</span>
         <button class="pill" data-period="2026-Q1" onclick="togglePeriod(this)">Q1</button>
         <button class="pill" data-period="2026-Q2" onclick="togglePeriod(this)">Q2</button>
+        <button class="pill" data-period="2026-Q3" onclick="togglePeriod(this)">Q3</button>
       </div>
       <div style="display:flex;gap:4px;align-items:center">
         <span style="font-size:10px;color:#4a6a8a;font-weight:700;min-width:32px;text-align:right">2025</span>
@@ -321,12 +322,14 @@ const PERIOD_MONTHS = {
   '2025-Q3': ['2025-07','2025-08','2025-09'],
   '2025-Q4': ['2025-10','2025-11','2025-12'],
   '2026-Q1': ['2026-01','2026-02','2026-03'],
-  '2026-Q2': ['2026-04','2026-05']
+  '2026-Q2': ['2026-04','2026-05','2026-06'],
+  '2026-Q3': ['2026-07','2026-08','2026-09']
 };
 
 const ALL_MONTHS = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06',
                     '2025-07','2025-08','2025-09','2025-10','2025-11','2025-12',
-                    '2026-01','2026-02','2026-03','2026-04','2026-05'];
+                    '2026-01','2026-02','2026-03','2026-04','2026-05','2026-06',
+                    '2026-07','2026-08','2026-09'];
 
 const CAT_CONFIG = {
   monitoring_detected: { label: 'Monitoring Detected',        color: '#1a6fff' },
@@ -900,9 +903,9 @@ function exportPartnerPDF() {
   doc.setFontSize(10);
   doc.setTextColor(107, 138, 173);
   doc.text('Professional Services  ·  Integration Monitoring Report', margin, 56);
-  const periodLabel = period === 'all' ? 'January 2025 – May 2026' :
+  const periodLabel = period === 'all' ? 'January 2025 – August 2026' :
     {'2025-Q1':'Q1 2025','2025-Q2':'Q2 2025','2025-Q3':'Q3 2025','2025-Q4':'Q4 2025',
-     '2026-Q1':'Q1 2026','2026-Q2':'Q2 2026'}[period] || period;
+     '2026-Q1':'Q1 2026','2026-Q2':'Q2 2026','2026-Q3':'Q3 2026'}[period] || period;
   doc.text(periodLabel, margin, 72);
 
   let y = 112;
